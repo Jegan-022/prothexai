@@ -119,51 +119,80 @@ async function handleUpload(file) {
     }
 }
 
+async function updateHealthScore(patientId, existingScore = null) {
+    try {
+        let score = existingScore;
+
+        if (score === null && patientId) {
+            const data = await apiRequest(`/patient/daily_metrics/${patientId}/latest`);
+            score = data.prosthetic_health_score;
+        }
+
+        // Default to 0 if nothing found
+        if (score === null || score === undefined) score = 0;
+
+        const scoreVal = document.getElementById('health-score-val');
+        const gaugeArc = document.getElementById('gauge-arc');
+        const statusBadge = document.getElementById('health-status-badge');
+
+        if (!scoreVal || !gaugeArc || !statusBadge) return;
+
+        scoreVal.textContent = score.toFixed(0);
+
+        // SVG dashoffset: 125.66 is full semi-circle length for radius 40
+        const offset = 125.66 - (score / 100 * 125.66);
+        gaugeArc.style.strokeDashoffset = offset;
+
+        // Risk Logic
+        let color, statusText, bgColor;
+        if (score >= 85) {
+            color = '#22c55e'; // Green
+            statusText = 'Status: Stable';
+            bgColor = 'rgba(34, 197, 94, 0.1)';
+        } else if (score >= 60) {
+            color = '#f59e0b'; // Amber
+            statusText = 'Status: Moderate Risk';
+            bgColor = 'rgba(245, 158, 11, 0.1)';
+        } else {
+            color = '#ef4444'; // Red
+            statusText = 'Status: High Risk';
+            bgColor = 'rgba(239, 68, 68, 0.1)';
+        }
+
+        // Apply styles
+        gaugeArc.style.stroke = color;
+        scoreVal.style.color = color;
+        statusBadge.textContent = statusText;
+        statusBadge.style.color = color;
+        statusBadge.style.backgroundColor = bgColor;
+
+    } catch (e) {
+        console.error("Failed to update health score gauge", e);
+    }
+}
+
 // Logic to load dashboard
 async function loadDashboard() {
     try {
-        const data = await apiRequest('/patient/dashboard');
+        const data = await apiRequest('/patient/dashboard', 'GET');
 
         // 1. Basic Info
         greeting.textContent = `Welcome back, ${data.patient_name}`;
 
-        // 2. Health Score
+        // 2. Health Score - Prefer data from dashboard object first
+        const token = localStorage.getItem('token');
+        const decoded = parseJwt(token);
+        const patientId = decoded?.patient_id;
 
-        // 2. Health Score - CSS Based Gauge Animation
-        const score = data.latest_health_score || 0;
-        document.getElementById('health-score-val').textContent = score.toFixed(0);
-
-        // Map 0-100 to Rotation (-135deg start to 45deg end = 180deg span)
-        const rotation = -135 + (score / 100 * 180);
-        const gaugeBody = document.getElementById('health-gauge-arc');
-        if (gaugeBody) {
-            gaugeBody.style.transform = `rotate(${rotation}deg)`;
-        }
-
-        const badge = document.getElementById('status-badge');
-        if (score < 60) {
-            badge.className = 'px-2 py-1 rounded bg-red-500/10 text-red-500 text-[10px] font-bold uppercase tracking-tighter';
-            badge.textContent = 'Status: Critical';
-        } else if (score < 80) {
-            badge.className = 'px-2 py-1 rounded bg-yellow-500/10 text-yellow-500 text-[10px] font-bold uppercase tracking-tighter';
-            badge.textContent = 'Status: Warning';
-        } else {
-            badge.className = 'px-2 py-1 rounded bg-green-500/10 text-green-500 text-[10px] font-bold uppercase tracking-tighter';
-            badge.textContent = 'Status: Optimal';
-        }
-
+        await updateHealthScore(patientId, data.latest_health_score);
 
         // 2. Update Stats (Symmetry & Speed)
         if (data.trends && data.trends.symmetry && data.trends.symmetry.length > 0) {
             let lastSym = data.trends.symmetry[data.trends.symmetry.length - 1];
-            // Normalize: If <= 1, it's a ratio (e.g. 0.95 -> 95%). If > 1, it's already % (e.g. 96).
             if (lastSym <= 1) lastSym *= 100;
-
             const lastSpeed = data.trends.walking_speed[data.trends.walking_speed.length - 1];
-
             const symEl = document.getElementById('stat-symmetry');
             if (symEl) symEl.textContent = lastSym.toFixed(0) + "%";
-
             const speedEl = document.getElementById('stat-speed');
             if (speedEl) speedEl.textContent = lastSpeed.toFixed(1);
         }
@@ -186,123 +215,109 @@ async function loadDashboard() {
             });
         }
 
-        // 5. Trends - Handle empty data gracefully
-
         // 5. New Analytics Charts Integration
-
-        // Transform trends data for correlation chart
-        // Need: [{ date: "2026-02-01", gait_symmetry_index: 88, walking_speed_mps: 1.2 }]
-        // Backend 'trends' object has separate arrays. We need to zip them.
         if (data.trends && data.trends.symmetry) {
-            // Create zipped data array manually since JS has no zip
-            // Assuming arrays are equal length and sorted (latest last)
-            // Trends arrays are built from that history.
-
             const count = data.trends.symmetry.length;
             const correlationData = [];
-
-            // Create generic dates relative to today for visualization since trends dates aren't in trend obj
             const today = new Date();
-
             for (let i = 0; i < count; i++) {
                 const d = new Date();
                 d.setDate(today.getDate() - (count - 1 - i));
-
                 correlationData.push({
                     date: d.toISOString().split('T')[0],
-                    gait_symmetry_index: data.trends.symmetry[i] * 100, // Convert to %
+                    gait_symmetry_index: data.trends.symmetry[i] * 100,
                     walking_speed_mps: data.trends.walking_speed[i]
                 });
             }
-
             const correlationChart = new DualAxisCorrelationChart("#correlation-chart");
             correlationChart.render(correlationData);
-
-            // Recovery Chart Data
             const recoveryData = data.trends.health_score.map((val, i) => ({
-                date: correlationData[i].date, // Reuse calculated dates
+                date: correlationData[i].date,
                 health_score: val
             }));
-
             const recoveryChart = new RecoveryChart("#recovery-chart");
             recoveryChart.render(recoveryData);
-
-            // Heatmap
-            // Mocking distribution for now as backend doesn't return full raw array yet
-            // Real implementation would rely on data.pressure_map
             const heatmap = new PressureHeatmap("#heatmap-chart");
             const basePressure = (data.trends.pressure_distribution[count - 1] || 0.8) * 100;
-
-            // Create some variation around the average index for visualization
             const fillMap = () => Array.from({ length: 72 }, () => Math.max(0, Math.min(100, basePressure + (Math.random() * 20 - 10))));
-
-
-            heatmap.render({
-                left: fillMap(),
-                right: fillMap()
-            });
-        } else {
-            // Show empty state message
-            const chartDiv = document.getElementById('correlation-chart');
-            if (chartDiv) chartDiv.innerHTML = '<p class="text-muted" style="text-align: center; padding: 3rem;">No trend data yet. Submit daily metrics to see your progress.</p>';
+            heatmap.render({ left: fillMap(), right: fillMap() });
         }
 
-        // 6. Calendar
-
-        // 6. Calendar
-        if (typeof renderCalendar === 'function') {
-            renderCalendar(data);
-        }
+        // 6. Calendar - Real Data Calculation
+        await renderCalendar(data);
 
     } catch (error) {
         console.error("Dashboard load failed", error);
         aiSummary.textContent = "Failed to load dashboard. " + (error.message || "Please check your profile and try again.");
-        aiSummary.style.color = "var(--red)";
-
-
-        // Show empty state for charts
-        const chartDiv = document.getElementById('correlation-chart');
-        if (chartDiv) chartDiv.innerHTML = '<p class="text-muted" style="text-align: center; padding: 3rem;">Unable to load data.</p>';
     }
 }
 
+function parseJwt(token) {
+    try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(atob(base64).split('').map(function (c) {
+            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+        return JSON.parse(jsonPayload);
+    } catch (e) {
+        return null;
+    }
+}
 
-
-function renderCalendar(data) {
+async function renderCalendar(dashboardData) {
     const container = document.getElementById('calendar-grid-container');
     if (!container) return;
-
     container.innerHTML = '';
 
     const todayDate = new Date();
     const currentDay = todayDate.getDate();
+    const currentMonthStr = todayDate.toISOString().slice(0, 7); // YYYY-MM
     const daysInMonth = new Date(todayDate.getFullYear(), todayDate.getMonth() + 1, 0).getDate();
-
-    // Start Day of the month
     const firstDay = new Date(todayDate.getFullYear(), todayDate.getMonth(), 1).getDay();
-    // Adjust for Monday start (0=Sun -> 6, 1=Mon -> 0)
     const startOffset = (firstDay + 6) % 7;
 
-    const filledDays = new Set();
-    if (data.history_events) {
-        data.history_events.forEach(e => {
-            const d = new Date(e.timestamp || e.date);
-            if (d.getMonth() === todayDate.getMonth()) {
-                filledDays.add(d.getDate());
-            }
-        });
-    } else {
-        // Fallback simulation
-        for (let i = 1; i < currentDay; i++) {
-            if (Math.random() > 0.3) filledDays.add(i);
+    // 1. Get patient_id from token
+    const token = localStorage.getItem('token');
+    const decoded = parseJwt(token);
+    let patientId = decoded ? decoded.patient_id : null;
+
+    // Fallback: If not in token (not logged in after change), fetch profile
+    if (!patientId) {
+        try {
+            const profile = await apiRequest('/patient/profile');
+            patientId = profile.id;
+        } catch (e) {
+            console.error("Could not resolve patient_id for calendar");
+            return;
         }
     }
-    // If we have latest score today, mark today as done
-    if (data && data.latest_health_score) filledDays.add(currentDay);
+
+    // 2. Fetch monthly records
+    let records = [];
+    try {
+        records = await apiRequest(`/patient/daily_metrics/${patientId}?month=${currentMonthStr}`);
+    } catch (e) {
+        console.error("Failed to fetch monthly metrics", e);
+    }
+
+    // 3. Build a date map (YYYY-MM-DD -> boolean)
+    const attendanceMap = {};
+    records.forEach(record => {
+        const isValid =
+            record.walking_speed_mps > 0 &&
+            record.gait_symmetry_index > 0 &&
+            record.step_length_cm > 0 &&
+            record.cadence_spm > 0;
+
+        if (isValid) {
+            attendanceMap[record.date] = true;
+        }
+    });
 
     let attendedCount = 0;
 
-    // Empty cells for offset
+    // Render Tiles
     for (let i = 0; i < startOffset; i++) {
         const empty = document.createElement('div');
         empty.className = 'aspect-square rounded bg-transparent';
@@ -314,18 +329,17 @@ function renderCalendar(data) {
         tile.className = 'aspect-square rounded flex items-center justify-center text-xs font-bold transition-all cursor-default';
         tile.textContent = i;
 
+        const formattedDate = `${currentMonthStr}-${String(i).padStart(2, '0')}`;
+
         if (i === currentDay) {
             tile.classList.add('border-2', 'border-accent-blue', 'relative');
-            const dot = document.createElement('span');
-            dot.className = 'absolute -top-1 -right-1 size-2 bg-accent-blue rounded-full';
-            tile.appendChild(dot);
         }
 
-        if (filledDays.has(i)) {
-            tile.classList.add('bg-primary', 'text-white');
-            attendedCount++;
+        if (attendanceMap[formattedDate]) {
+            tile.classList.add('bg-[#22c55e]', 'text-white'); // Green
+            if (i <= currentDay) attendedCount++;
         } else if (i < currentDay) {
-            tile.classList.add('bg-slate-100', 'dark:bg-slate-800', 'text-slate-400');
+            tile.classList.add('bg-[#ef4444]/30', 'text-[#ef4444]'); // Red
         } else {
             tile.classList.add('bg-slate-50', 'dark:bg-slate-900', 'text-slate-600', 'dark:text-slate-600');
         }
@@ -333,40 +347,41 @@ function renderCalendar(data) {
         container.appendChild(tile);
     }
 
-    // Update Progress Bar
+    // 4. Update Compliance Percentage
     const bar = document.getElementById('compliance-progress');
     const pctEl = document.getElementById('compliance-pct');
     if (bar && pctEl) {
-        const progress = Math.round((attendedCount / currentDay) * 100);
+        const progress = currentDay > 0 ? Math.round((attendedCount / currentDay) * 100) : 0;
         bar.style.width = `${progress}%`;
         pctEl.textContent = `${progress}%`;
+        bar.style.backgroundColor = '#22c55e'; // Ensure progress bar is green
     }
 
-    // Update Today Status Card
+    // 5. Update Today Status Card
     const todayIcon = document.getElementById('today-icon');
     const todayTitle = document.getElementById('today-title');
     const todayScore = document.getElementById('today-score');
     const todayCard = document.getElementById('today-status-card');
 
-    if (filledDays.has(currentDay)) {
+    const todayFormatted = todayDate.toISOString().slice(0, 10);
+    if (attendanceMap[todayFormatted]) {
         if (todayTitle) todayTitle.textContent = "Today: Submitted";
         if (todayScore) {
-            todayScore.textContent = (data.latest_health_score || 0).toFixed(0);
+            todayScore.textContent = (dashboardData.latest_health_score || 0).toFixed(0);
             todayScore.className = "text-xl font-black text-green-600 dark:text-green-400";
         }
         if (todayIcon) {
             todayIcon.textContent = "check_circle";
-            todayIcon.parentElement.className = "size-12 rounded-lg bg-green-500 flex items-center justify-center text-white shrink-0 shadow-lg shadow-green-500/20";
+            todayIcon.parentElement.className = "size-12 rounded-lg bg-[#22c55e] flex items-center justify-center text-white shrink-0 shadow-lg shadow-green-500/20";
         }
         if (todayCard) {
-            todayCard.className = "bg-green-50/50 dark:bg-green-500/5 rounded-xl p-4 border-2 border-green-500/30 dark:border-green-500/20 flex items-center gap-4";
+            todayCard.className = "bg-green-50/50 dark:bg-green-500/5 rounded-xl p-4 border-2 border-[#22c55e]/30 dark:border-[#22c55e]/20 flex items-center gap-4";
         }
     } else {
         if (todayTitle) todayTitle.textContent = "Today: Pending";
         if (todayCard) {
-            todayCard.className = "bg-slate-50 dark:bg-slate-800/30 rounded-xl p-4 border border-slate-200 dark:border-slate-700 flex items-center gap-4 border-l-4 border-l-red-500";
+            todayCard.className = "bg-slate-50 dark:bg-slate-800/30 rounded-xl p-4 border border-slate-200 dark:border-slate-700 flex items-center gap-4 border-l-4 border-l-[#ef4444]";
         }
-
     }
 }
 

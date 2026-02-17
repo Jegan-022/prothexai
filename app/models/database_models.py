@@ -49,6 +49,7 @@ class User(BaseModel):
     )
     id: Optional[PyObjectId] = Field(default=None, alias="_id")
     email: EmailStr
+    full_name: str
     hashed_password: str
     role: UserRole
     is_active: bool = True
@@ -152,5 +153,18 @@ class WeeklyReport(BaseModel):
     abnormal_count: int
     high_skin_risk_count: int
     pdf_path: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class Notification(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+        arbitrary_types_allowed=True,
+    )
+    id: Optional[PyObjectId] = Field(default=None, alias="_id")
+    patient_id: PyObjectId # Link to patient_profiles._id
+    title: str
+    message: str
+    category: str # "system", "admin", "alert"
+    is_read: bool = False
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 

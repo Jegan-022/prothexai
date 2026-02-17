@@ -1,85 +1,339 @@
 import { apiRequest } from './api.js';
 
-const loginForm = document.getElementById('login-form');
-const emailInput = document.getElementById('email');
-const passwordInput = document.getElementById('password');
-const submitBtn = document.querySelector('.btn-auth');
-const toggleLink = document.getElementById('toggle-auth');
-const errorMsg = document.getElementById('error-message');
+document.addEventListener('DOMContentLoaded', () => {
+    // DOM Elements
+    const tabLogin = document.getElementById('tab-login');
+    const tabRegister = document.getElementById('tab-register');
+    const loginForm = document.getElementById('login-form');
+    const registerForm = document.getElementById('register-form');
 
-let isLogin = true;
+    const loginEmail = document.getElementById('login-email');
+    const loginPassword = document.getElementById('login-password');
+    const regName = document.getElementById('reg-name');
+    const regEmail = document.getElementById('reg-email');
+    const regPassword = document.getElementById('reg-password');
+    const regConfirmPassword = document.getElementById('reg-confirm-password');
 
-toggleLink.addEventListener('click', (e) => {
-    e.preventDefault();
-    isLogin = !isLogin;
+    const loginError = document.getElementById('login-error');
+    const registerError = document.getElementById('register-error');
 
-    // Update UI
-    document.querySelector('.auth-header p').textContent = isLogin ? 'Sign in to your account' : 'Create a new account';
-    submitBtn.textContent = isLogin ? 'Sign In' : 'Create Account';
-    toggleLink.textContent = isLogin ? 'Register' : 'Sign In';
-    document.querySelector('.auth-footer p').firstChild.textContent = isLogin ? "Don't have an account? " : "Already have an account? ";
-    errorMsg.textContent = '';
-});
+    const strengthBar = document.getElementById('password-strength');
+    const strengthLabel = document.getElementById('strength-label');
 
-loginForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    errorMsg.textContent = '';
-    submitBtn.disabled = true;
-    submitBtn.style.opacity = '0.7';
+    const passwordToggles = document.querySelectorAll('.password-toggle');
 
-    const email = emailInput.value;
-    const password = passwordInput.value;
+    // Icons
+    const eyeOpen = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>`;
+    const eyeClosed = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/></svg>`;
 
-    try {
-        if (isLogin) {
-            // LOGIN FLOW
+    // Utility: Robust JWT Decoding
+    const decodeJWT = (token) => {
+        try {
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            return JSON.parse(window.atob(base64));
+        } catch (e) {
+            console.error("JWT Decode failed", e);
+            return null;
+        }
+    };
+
+    // Tab Switching
+    function switchTab(mode) {
+        if (mode === 'login') {
+            tabLogin.classList.add('bg-blue-600', 'text-white', 'shadow-lg');
+            tabLogin.classList.remove('text-slate-400');
+            tabRegister.classList.remove('bg-blue-600', 'text-white', 'shadow-lg');
+            tabRegister.classList.add('text-slate-400');
+
+            loginForm.classList.remove('hidden-form');
+            registerForm.classList.add('hidden-form');
+            setTimeout(() => {
+                loginForm.style.display = 'block';
+                registerForm.style.display = 'none';
+            }, 300);
+        } else {
+            tabRegister.classList.add('bg-blue-600', 'text-white', 'shadow-lg');
+            tabRegister.classList.remove('text-slate-400');
+            tabLogin.classList.remove('bg-blue-600', 'text-white', 'shadow-lg');
+            tabLogin.classList.add('text-slate-400');
+
+            registerForm.classList.remove('hidden-form');
+            loginForm.classList.add('hidden-form');
+            setTimeout(() => {
+                registerForm.style.display = 'block';
+                loginForm.style.display = 'none';
+            }, 300);
+        }
+    }
+
+    tabLogin.addEventListener('click', () => switchTab('login'));
+    tabRegister.addEventListener('click', () => switchTab('register'));
+
+    // Password Visibility Toggle
+    passwordToggles.forEach(toggle => {
+        toggle.addEventListener('click', () => {
+            const input = toggle.parentElement.querySelector('input');
+            if (input.type === 'password') {
+                input.type = 'text';
+                toggle.innerHTML = eyeClosed;
+            } else {
+                input.type = 'password';
+                toggle.innerHTML = eyeOpen;
+            }
+        });
+    });
+
+    // Email Validation (Regex)
+    function validateEmail(email) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    }
+
+    const handleEmailValidation = (input) => {
+        const errorText = input.parentElement.querySelector('.error-text');
+        if (input.value && !validateEmail(input.value)) {
+            input.classList.add('border-red-500');
+            if (errorText) {
+                errorText.textContent = 'Please enter a valid clinical email address';
+                errorText.classList.remove('hidden');
+            }
+        } else {
+            input.classList.remove('border-red-500');
+            if (errorText) errorText.classList.add('hidden');
+        }
+    };
+
+    loginEmail.addEventListener('blur', () => handleEmailValidation(loginEmail));
+    regEmail.addEventListener('blur', () => handleEmailValidation(regEmail));
+
+    // Password Strength Meter
+    regPassword.addEventListener('input', () => {
+        const val = regPassword.value;
+        let strength = 0;
+
+        if (val.length > 0) strength += 20;
+        if (val.length >= 8) strength += 20;
+        if (/[A-Z]/.test(val)) strength += 20;
+        if (/[0-9]/.test(val)) strength += 20;
+        if (/[^A-Za-z0-9]/.test(val)) strength += 20;
+
+        strengthBar.style.width = strength + '%';
+
+        if (strength <= 40) {
+            strengthBar.style.backgroundColor = '#DC2626';
+            strengthLabel.textContent = 'Security Level: Low (Danger)';
+            strengthLabel.style.color = '#DC2626';
+        } else if (strength <= 80) {
+            strengthBar.style.backgroundColor = '#F59E0B';
+            strengthLabel.textContent = 'Security Level: Moderate';
+            strengthLabel.style.color = '#F59E0B';
+        } else {
+            strengthBar.style.backgroundColor = '#16A34A';
+            strengthLabel.textContent = 'Security Level: High (Secure)';
+            strengthLabel.style.color = '#16A34A';
+        }
+
+        if (val.length === 0) {
+            strengthLabel.textContent = 'Security Level: None';
+            strengthLabel.style.color = '#94A3B8';
+        }
+    });
+
+    // Utility: Show Loading
+    function setLoading(form, isLoading) {
+        const btn = form.querySelector('button[type="submit"]');
+        const btnText = btn.querySelector('.btn-text');
+        if (isLoading) {
+            btn.disabled = true;
+            btn.classList.add('opacity-70', 'cursor-not-allowed');
+            if (!btn.querySelector('.spinner')) {
+                btnText.insertAdjacentHTML('afterbegin', '<span class="spinner"></span>');
+            }
+        } else {
+            btn.disabled = false;
+            btn.classList.remove('opacity-70', 'cursor-not-allowed');
+            const spinner = btn.querySelector('.spinner');
+            if (spinner) spinner.remove();
+        }
+    }
+
+    // Login Form Submit
+    loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        loginError.classList.add('hidden');
+
+        const email = loginEmail.value;
+        const password = loginPassword.value;
+
+        if (!validateEmail(email)) {
+            loginEmail.classList.add('border-red-500');
+            return;
+        }
+
+        setLoading(loginForm, true);
+
+        try {
+            // Match backend LoginRequest schema
             const data = await apiRequest('/auth/login', 'POST', { email, password });
-            if (data) {
+
+            if (data && data.access_token) {
                 localStorage.setItem('token', data.access_token);
-                // Decode JWT to get role (simple implementation)
-                const payload = JSON.parse(atob(data.access_token.split('.')[1]));
+
+                // Decode JWT to get role and patient_id
+                const payload = decodeJWT(data.access_token);
+                if (!payload) throw new Error("Invalid token received from server");
+
                 localStorage.setItem('role', payload.role);
 
-                // Smart Redirect
+                // Smart Redirection based on Backend response
                 if (payload.role === 'admin') {
                     window.location.href = 'admin.html';
                 } else {
-                    // Check if profile exists? Backend doesn't return this in login response based on PRD
-                    // We will try to fetch profile, if 404, go to profile page
-                    // But simpler: go to dashboard, dashboard guard/logic handles 404 or missing profile?
-                    // PRD says: "Patient & profile incomplete → profile.html"
-                    // We need to check profile existance. 
-
-                    try {
-                        // Quick check
-                        await apiRequest('/patient/dashboard');
+                    // Patient role logic
+                    if (payload.patient_id) {
+                        localStorage.setItem('patient_id', payload.patient_id);
                         window.location.href = 'dashboard.html';
-                    } catch (err) {
-                        // If dashboard fails (likely 404 profile), go to profile
+                    } else {
+                        // Registration complete but profile missing
                         window.location.href = 'profile.html';
                     }
                 }
             }
-        } else {
-            // REGISTER FLOW
-            const data = await apiRequest('/auth/register', 'POST', {
-                email,
-                password,
-                role: 'patient' // Default
+        } catch (error) {
+            loginError.textContent = error.message || 'Incorrect email or password.';
+            loginError.classList.remove('hidden');
+            loginForm.classList.add('shake');
+            setTimeout(() => loginForm.classList.remove('shake'), 400);
+        } finally {
+            setLoading(loginForm, false);
+        }
+    });
+
+    // Register Form Submit
+    registerForm.addEventListener('submit', async (e) => {
+        // 1️⃣ Prevent Default Form Submission
+        e.preventDefault();
+        registerError.classList.add('hidden');
+
+        // 2️⃣ Collect Required Fields
+        // internal Note: mapping user requested IDs to existing HTML IDs
+        // User requested: id="name", id="email", etc.
+        // Existing HTML: id="reg-name", id="reg-email", etc.
+        const fullName = regName.value.trim();
+        const email = regEmail.value.trim();
+        const password = regPassword.value.trim();
+        const confirmPassword = regConfirmPassword.value.trim();
+
+        // Basic frontend validation
+        if (!fullName || !email || !password) {
+            registerError.textContent = "All fields are required";
+            registerError.classList.remove('hidden');
+            return;
+        }
+
+        if (password !== confirmPassword) {
+            registerError.textContent = "Passwords do not match";
+            registerError.classList.remove('hidden');
+            return;
+        }
+
+        setLoading(registerForm, true);
+
+        try {
+            // 3️⃣ Send Correct POST Request
+            const response = await fetch("http://localhost:8000/auth/register", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    full_name: fullName,
+                    email: email,
+                    password: password,
+                    role: "patient" // 🔥 Hardcoded to "patient" as requested
+                })
             });
 
-            // Auto login after register
-            const loginData = await apiRequest('/auth/login', 'POST', { email, password });
-            localStorage.setItem('token', loginData.access_token);
-            const payload = JSON.parse(atob(loginData.access_token.split('.')[1]));
-            localStorage.setItem('role', payload.role);
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || "Registration failed");
+            }
 
-            window.location.href = 'profile.html';
+            // 4️⃣ Auto Login After Registration
+            await loginUser(email, password);
+
+        } catch (error) {
+            registerError.textContent = error.message;
+            registerError.classList.remove('hidden');
+            registerForm.classList.add('shake');
+            setTimeout(() => registerForm.classList.remove('shake'), 400);
+        } finally {
+            setLoading(registerForm, false);
         }
-    } catch (error) {
-        errorMsg.textContent = error.message || 'Authentication failed';
-    } finally {
-        submitBtn.disabled = false;
-        submitBtn.style.opacity = '1';
+    });
+
+    // Login Helper Function (as requested)
+    async function loginUser(email, password) {
+        try {
+            const response = await fetch("http://localhost:8000/auth/login", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    email,
+                    password
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || "Login failed");
+            }
+
+            const data = await response.json();
+
+            localStorage.setItem("token", data.access_token);
+
+            // Need to decode token or use data from response if available to determine role
+            // The user's provided snippet assumes 'data.role' and 'data.patient_id' are in the login response directly
+            // BUT the backend returns {access_token, token_type}.
+            // So we must decode the token to get role/id as per existing logic, OR update login to return more data.
+            // USER REQUESTED CODE:
+            /*
+            if (data.role === "admin") { ... }
+            */
+            // IF the backend is NOT returning role in the login response body (it returns Token model), 
+            // then 'data.role' will be undefined.
+            // I must ensure this works. 
+            // Existing 'auth.js' decoded the JWT.
+            // I should combine the user's request with the reality of the system.
+            // I will use the decodeJWT utility which exists in this file.
+
+            const payload = decodeJWT(data.access_token);
+            if (!payload) throw new Error("Invalid token");
+
+            localStorage.setItem('role', payload.role);
+            if (payload.patient_id) localStorage.setItem('patient_id', payload.patient_id);
+
+            // Logic from user request, adapted to use payload properties if data doesn't have them
+            const role = data.role || payload.role;
+            const patientId = data.patient_id || payload.patient_id;
+
+            if (role === "admin") {
+                window.location.href = "admin.html";
+            } else {
+                if (!patientId) {
+                    window.location.href = "profile.html";
+                } else {
+                    window.location.href = "dashboard.html";
+                }
+            }
+        } catch (error) {
+            console.error("Auto-login error", error);
+            // Fallback if auto-login fails (shouldn't happen if reg succeeded)
+            alert("Registration successful, but login failed. Please log in manually.");
+            switchTab('login');
+        }
     }
 });

@@ -6,6 +6,7 @@ from app.models.database_models import UserRole
 
 # Auth Schemas
 class UserRegister(BaseModel):
+    full_name: str = Field(..., min_length=1, max_length=100)
     email: EmailStr
     password: str = Field(..., min_length=8, max_length=128)
     role: UserRole
@@ -17,6 +18,8 @@ class LoginRequest(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
+    role: Optional[str] = None
+    patient_id: Optional[str] = None
 
 class TokenData(BaseModel):
     email: Optional[str] = None
@@ -25,6 +28,7 @@ class TokenData(BaseModel):
 class UserOut(BaseModel):
     id: str
     email: EmailStr
+    full_name: str = "Unknown"
     role: UserRole
     created_at: datetime
 
@@ -126,3 +130,4 @@ class AdminDashboardSummary(BaseModel):
     total_feedback: int
     open_issues: int
     resolved_issues: int
+    risk_distribution: Dict[str, int]

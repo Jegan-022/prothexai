@@ -233,18 +233,31 @@ function renderCharts(data) {
         }
     });
 
-    // 4. PRESSURE & SKIN (Multi-line)
+    // 4. PRESSURE & SKIN (Multi-line Dual Axis)
     createChart('chart-pressure-skin', 'line', {
         labels: labels,
         datasets: [
             {
                 label: 'Pressure',
-                data: data.map(d => d.pressure_distribution_index * 100),
+                data: data.map(d => d.pressure_distribution_index),
                 borderColor: '#ef4444',
+                backgroundColor: 'rgba(239, 68, 68, 0.1)',
                 borderWidth: 2,
                 tension: 0.4,
+                pointRadius: 3,
+                yAxisID: 'y',
+                units: ' index'
+            },
+            {
+                label: 'Moisture',
+                data: data.map(d => d.skin_moisture),
+                borderColor: '#3b82f6',
+                borderWidth: 1.5,
+                borderDash: [5, 5],
+                tension: 0.4,
                 pointRadius: 0,
-                units: 'idx'
+                yAxisID: 'y',
+                units: '%'
             },
             {
                 label: 'Temp',
@@ -252,25 +265,61 @@ function renderCharts(data) {
                 borderColor: '#22c55e',
                 borderWidth: 2,
                 tension: 0.4,
-                pointRadius: 0,
+                pointRadius: 3,
+                yAxisID: 'y1',
                 units: '°C'
-            },
-            {
-                label: 'Moisture',
-                data: data.map(d => d.skin_moisture),
-                borderColor: '#06b6d4',
-                borderWidth: 2,
-                tension: 0.4,
-                pointRadius: 0,
-                units: '%'
             }
         ]
     }, {
         scales: {
             x: commonOptions.scales.x,
-            y: { ...commonOptions.scales.y } // Default Y
+            y: {
+                ...commonOptions.scales.y,
+                min: 0,
+                max: 1.2,
+                position: 'left',
+                title: { display: true, text: 'Pressure/Moisture', color: '#64748b', font: { size: 8 } }
+            },
+            y1: {
+                ...commonOptions.scales.y,
+                min: 30,
+                max: 40,
+                position: 'right',
+                grid: { display: false },
+                title: { display: true, text: 'Temperature', color: '#64748b', font: { size: 8 } }
+            }
         }
     });
+
+    // Update Pressure Clinical Insight
+    updatePressureInsights(data[data.length - 1]);
+}
+
+function updatePressureInsights(last) {
+    if (!last) return;
+
+    const insightText = document.getElementById('ai-insight-text');
+    const correlationLabel = document.querySelector('.text-accent-green');
+
+    let risks = [];
+    if (last.pressure_distribution_index > 1.0) risks.push("High Pressure Risk");
+    if (last.skin_temperature_c > 35) risks.push("Elevated Skin Temperature");
+    if (last.skin_moisture > 80) risks.push("Excessive Moisture Warning");
+
+    if (insightText) {
+        if (risks.length > 0) {
+            insightText.textContent = `${risks.join(" & ")}. Recommended: Inspect stump for redness and adjust prosthetic fit immediately.`;
+            insightText.parentElement.parentElement.classList.add('border-accent-red/50', 'bg-accent-red/5');
+            if (correlationLabel) {
+                correlationLabel.textContent = "Action Required";
+                correlationLabel.className = "text-[10px] font-bold text-accent-red";
+            }
+        } else {
+            insightText.textContent = "Skin and pressure indicators within safe range. Continued monitoring recommended.";
+            insightText.parentElement.parentElement.classList.remove('border-accent-red/50', 'bg-accent-red/5');
+            // Reset to defaults if needed
+        }
+    }
 }
 
 // ---- HELPER FUNCTIONS ----
@@ -296,8 +345,19 @@ function createChart(canvasId, type, data, extraOptions = {}) {
 }
 
 function showNoDataState() {
-    console.log("No valid analytics data available.");
-    // Optional: display UI message
+    const containers = ['content-gait', 'content-recovery', 'content-pressure'];
+    containers.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.innerHTML = `
+                <div class="flex flex-col items-center justify-center py-20 text-slate-500">
+                    <span class="material-symbols-outlined text-4xl mb-2">analytics</span>
+                    <p class="text-sm font-bold">No pressure data available</p>
+                    <p class="text-xs uppercase tracking-widest mt-1">Submit daily metrics to see trends</p>
+                </div>
+            `;
+        }
+    });
 }
 
 function setSafeText(id, text) {

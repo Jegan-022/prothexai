@@ -20,12 +20,25 @@ async def register(user_in: UserRegister):
     hashed_password = get_password_hash(user_in.password)
     user_dict = User(
         email=user_in.email,
+        full_name=user_in.full_name,
         hashed_password=hashed_password,
         role=user_in.role
     ).model_dump(by_alias=True, exclude_none=True)
     
     result = await db["users"].insert_one(user_dict)
-    user_dict["id"] = str(result.inserted_id)
+    user_id = result.inserted_id
+    user_dict["id"] = str(user_id)
+
+    # Optional: Pre-initialize patient profile if role is patient
+    if user_in.role == "patient":
+        from app.models.database_models import PatientProfile
+        profile = PatientProfile(
+            user_id=user_id,
+            name=user_in.full_name,
+            email=user_in.email
+        ).model_dump(by_alias=True, exclude_none=True)
+        await db["patient_profiles"].insert_one(profile)
+    
     return user_dict
 
 @router.post("/login", response_model=Token)
@@ -40,11 +53,24 @@ async def login(data: LoginRequest):
         )
     
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    
+    # Try to find patient_id if user is a patient
+    token_data = {"sub": user["email"], "role": user["role"], "id": str(user["_id"])}
+    if user["role"] == "patient":
+        profile = await db["patient_profiles"].find_one({"user_id": user["_id"]})
+        if profile:
+            token_data["patient_id"] = str(profile["_id"])
+    
     access_token = create_access_token(
-        data={"sub": user["email"], "role": user["role"]},
+        data=token_data,
         expires_delta=access_token_expires
     )
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {
+        "access_token": access_token, 
+        "token_type": "bearer",
+        "role": user["role"],
+        "patient_id": token_data.get("patient_id")
+    }
 
 @router.get("/me", response_model=UserOut)
 async def get_me(current_user: dict = Depends(get_current_user)):

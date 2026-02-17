@@ -1,48 +1,425 @@
 <!DOCTYPE html>
-<html lang="en">
+<html class="dark" lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel - ProthexaI</title>
-    <link rel="stylesheet" href="css/base.css">
-    <link rel="stylesheet" href="css/admin.css">
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>ProthexaI - Clinical Admin</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="js/guard.js"></script>
+
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#2563EB",
+                        "background-dark": "#0F172A",
+                        "card-dark": "#1E293B",
+                        "border-dark": "#334155",
+                        "text-primary": "#F1F5F9",
+                        "text-secondary": "#94A3B8",
+                        "accent-blue": "#2563EB",
+                        "accent-green": "#16A34A",
+                        "accent-amber": "#F59E0B",
+                        "accent-red": "#DC2626"
+                    },
+                    fontFamily: {
+                        "display": ["Public Sans", "sans-serif"]
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Public Sans', sans-serif;
+            background-color: #0F172A;
+            color: #F1F5F9;
+            min-height: 100vh;
+        }
+
+        .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(51, 65, 85, 0.5);
+        }
+
+        .sidebar-link.active {
+            background: rgba(37, 99, 235, 0.1);
+            color: #2563EB;
+            border-right: 3px solid #2563EB;
+        }
+
+        /* Hide scrollbars but keep functionality */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .risk-stable {
+            background: rgba(22, 163, 74, 0.1);
+            color: #16A34A;
+            border-left: 4px solid #16A34A;
+        }
+
+        .risk-moderate {
+            background: rgba(245, 158, 11, 0.1);
+            color: #F59E0B;
+            border-left: 4px solid #F59E0B;
+        }
+
+        .risk-high {
+            background: rgba(220, 38, 38, 0.1);
+            color: #DC2626;
+            border-left: 4px solid #DC2626;
+        }
+
+        .btn-primary {
+            background: #2563EB;
+            box-shadow: 0 4px 14px 0 rgba(37, 99, 235, 0.3);
+        }
+    </style>
 </head>
 
-<body>
-    <div class="container admin-container">
-        <header style="margin-bottom: 2rem; display: flex; justify-content: space-between;">
-            <h1>Admin Overview</h1>
-            <button id="btn-logout" class="text-red">Logout</button>
+<body class="flex overflow-hidden">
+
+    <!-- Sidebar -->
+    <aside
+        class="w-64 border-r border-border-dark flex flex-col h-screen shrink-0 z-50 bg-background-dark/50 backdrop-blur-xl">
+        <div class="p-6">
+            <div class="flex items-center gap-3">
+                <div class="size-8 rounded-lg bg-primary flex items-center justify-center">
+                    <span class="material-symbols-outlined text-white text-[20px] font-bold">clinical_notes</span>
+                </div>
+                <h1 class="text-lg font-black tracking-tighter">ProthexaI <span
+                        class="text-[10px] text-primary block -mt-1 tracking-widest uppercase opacity-70">Admin
+                        Core</span></h1>
+            </div>
+        </div>
+
+        <nav class="flex-1 px-4 space-y-1 mt-4">
+            <button onclick="switchModule('dashboard')" id="nav-dashboard"
+                class="sidebar-link active w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-bold transition-all group">
+                <span class="material-symbols-outlined group-hover:scale-110 transition-transform">grid_view</span>
+                Dashboard
+            </button>
+            <button onclick="switchModule('patients')" id="nav-patients"
+                class="sidebar-link w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-bold text-text-secondary hover:text-text-primary hover:bg-white/5 transition-all group">
+                <span class="material-symbols-outlined group-hover:scale-110 transition-transform">group</span>
+                Patients
+            </button>
+            <button onclick="switchModule('feedback')" id="nav-feedback"
+                class="sidebar-link w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-bold text-text-secondary hover:text-text-primary hover:bg-white/5 transition-all group">
+                <span class="material-symbols-outlined group-hover:scale-110 transition-transform">chat</span>
+                Feedback
+            </button>
+            <button onclick="switchModule('broadcast')" id="nav-broadcast"
+                class="sidebar-link w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-bold text-text-secondary hover:text-text-primary hover:bg-white/5 transition-all group">
+                <span class="material-symbols-outlined group-hover:scale-110 transition-transform">campaign</span>
+                Broadcast
+            </button>
+            <div class="pt-4 pb-2 px-4">
+                <span
+                    class="text-[10px] font-bold text-text-secondary uppercase tracking-widest opacity-50">Operations</span>
+            </div>
+            <button onclick="switchModule('system')" id="nav-system"
+                class="sidebar-link w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-bold text-text-secondary hover:text-text-primary hover:bg-white/5 transition-all group">
+                <span class="material-symbols-outlined group-hover:scale-110 transition-transform">dns</span>
+                System Monitor
+            </button>
+        </nav>
+
+        <div class="p-4 border-t border-border-dark">
+            <div class="flex items-center gap-3 p-3 glass-card rounded-xl">
+                <div class="size-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                    <span class="material-symbols-outlined text-[18px]">verified_user</span>
+                </div>
+                <div class="flex-1 overflow-hidden">
+                    <p class="text-[10px] font-bold text-text-primary truncate">Admin User</p>
+                    <p class="text-[9px] text-text-secondary uppercase tracking-widest">Clinical Authority</p>
+                </div>
+                <button id="btn-logout" class="text-text-secondary hover:text-accent-red transition-colors">
+                    <span class="material-symbols-outlined text-[18px]">logout</span>
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 h-screen flex flex-col overflow-hidden relative">
+        <!-- Top Navbar -->
+        <header
+            class="h-16 border-b border-border-dark px-8 flex items-center justify-between shrink-0 bg-background-dark/20 backdrop-blur-md">
+            <div id="module-title" class="flex flex-col">
+                <h2 class="text-lg font-bold">Dashboard Overview</h2>
+                <span class="text-[10px] text-text-secondary uppercase tracking-widest font-bold">Population Health
+                    Analytics</span>
+            </div>
+            <div class="flex items-center gap-6">
+                <div
+                    class="flex items-center gap-2 px-3 py-1.5 bg-accent-green/10 text-accent-green border border-accent-green/20 rounded-full">
+                    <span class="size-2 rounded-full bg-accent-green animate-pulse"></span>
+                    <span class="text-[10px] font-black uppercase tracking-tighter">API Live</span>
+                </div>
+                <button class="relative text-text-secondary hover:text-text-primary transition-colors">
+                    <span class="material-symbols-outlined">notifications</span>
+                    <span
+                        class="absolute top-0 right-0 size-2 bg-accent-red rounded-full border border-background-dark"></span>
+                </button>
+            </div>
         </header>
 
-        <div class="stats-grid">
-            <div class="stat-card">
-                <p class="stat-label">Total Patients</p>
-                <div id="stat-patients" class="stat-value">--</div>
-            </div>
-            <div class="stat-card">
-                <p class="stat-label">Total Feedback</p>
-                <div id="stat-feedback" class="stat-value">--</div>
-            </div>
-            <div class="stat-card">
-                <p class="stat-label">Open Issues</p>
-                <div id="stat-open" class="stat-value text-red">--</div>
-            </div>
-            <div class="stat-card">
-                <p class="stat-label">Resolved</p>
-                <div id="stat-resolved" class="stat-value text-green">--</div>
-            </div>
-        </div>
+        <!-- Content Area -->
+        <div id="module-container" class="flex-1 overflow-y-auto p-8 no-scrollbar">
 
-        <div class="feedback-section">
-            <h3 style="margin-bottom: 1.5rem;">Recent User Feedback</h3>
-            <div id="feedback-list" class="feedback-grid">
-                <!-- JS Populates Items -->
+            <!-- MODULE: DASHBOARD (Active by default) -->
+            <div id="module-dashboard" class="space-y-8">
+                <!-- KPI Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="glass-card p-6 rounded-2xl border-l-4 border-l-primary">
+                        <p class="text-[10px] text-text-secondary uppercase font-bold tracking-widest">Total Patients
+                        </p>
+                        <h3 id="kpi-patients" class="text-3xl font-black mt-2">--</h3>
+                    </div>
+                    <div class="glass-card p-6 rounded-2xl border-l-4 border-l-accent-green">
+                        <p class="text-[10px] text-text-secondary uppercase font-bold tracking-widest">Active (24h)</p>
+                        <h3 id="kpi-active" class="text-3xl font-black mt-2">--</h3>
+                    </div>
+                    <div class="glass-card p-6 rounded-2xl border-l-4 border-l-accent-amber">
+                        <p class="text-[10px] text-text-secondary uppercase font-bold tracking-widest">Open Feedback</p>
+                        <h3 id="kpi-feedback" class="text-3xl font-black mt-2">--</h3>
+                    </div>
+                    <div class="glass-card p-6 rounded-2xl border-l-4 border-l-accent-red">
+                        <p class="text-[10px] text-text-secondary uppercase font-bold tracking-widest">Critical Risks
+                        </p>
+                        <h3 id="kpi-critical" class="text-3xl font-black mt-2">--</h3>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- Distribution Chart -->
+                    <div class="lg:col-span-2 glass-card p-6 rounded-2xl">
+                        <div class="flex justify-between items-center mb-6">
+                            <h4 class="text-sm font-bold uppercase tracking-widest text-text-secondary">Population Risk
+                                Distribution</h4>
+                            <div class="text-[10px] font-bold text-accent-blue flex items-center gap-1 cursor-pointer">
+                                <span class="material-symbols-outlined text-[14px]">refresh</span> SYNC
+                            </div>
+                        </div>
+                        <div class="h-64 w-full relative" id="risk-distribution-container">
+                            <canvas id="risk-chart"></canvas>
+                        </div>
+                    </div>
+                    <!-- Feedback Feed -->
+                    <div class="glass-card p-6 rounded-2xl flex flex-col h-[400px]">
+                        <h4 class="text-sm font-bold uppercase tracking-widest text-text-secondary mb-4">Live Feedback
+                        </h4>
+                        <div id="dashboard-feedback-list" class="flex-1 space-y-3 overflow-y-auto no-scrollbar">
+                            <!-- Injected -->
+                        </div>
+                        <button onclick="switchModule('feedback')"
+                            class="mt-4 w-full py-2 text-[10px] font-black uppercase tracking-widest border border-border-dark rounded-lg hover:bg-white/5 transition-all">View
+                            All Feedback</button>
+                    </div>
+                </div>
             </div>
+
+            <!-- MODULE: PATIENTS -->
+            <div id="module-patients" class="hidden space-y-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="relative w-72">
+                        <span
+                            class="material-symbols-outlined absolute left-3 top-2.5 text-text-secondary text-[20px]">search</span>
+                        <input type="text" id="patient-search" placeholder="Search Patients..."
+                            class="w-full bg-card-dark border border-border-dark rounded-xl pl-10 pr-4 py-2.5 text-sm focus:border-primary outline-none transition-all">
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <select id="filter-risk"
+                            class="bg-card-dark border border-border-dark rounded-xl px-4 py-2.5 text-xs font-bold outline-none focus:border-primary transition-all">
+                            <option value="all">All Risk Levels</option>
+                            <option value="high">High Risk</option>
+                            <option value="moderate">Moderate</option>
+                            <option value="stable">Stable</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="glass-card rounded-2xl border border-border-dark overflow-hidden">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="border-b border-border-dark bg-white/5">
+                                <th
+                                    class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-text-secondary text-center">
+                                    Name</th>
+                                <th
+                                    class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-text-secondary text-center">
+                                    Device</th>
+                                <th
+                                    class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-text-secondary text-center">
+                                    Score</th>
+                                <th
+                                    class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-text-secondary text-center">
+                                    Skin Risk</th>
+                                <th
+                                    class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-text-secondary text-center">
+                                    Gait</th>
+                                <th
+                                    class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-text-secondary text-center">
+                                    Last Active</th>
+                                <th class="px-6 py-4 text-center"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="patient-table-body" class="divide-y divide-border-dark">
+                            <!-- Injected -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- MODULE: FEEDBACK -->
+            <div id="module-feedback" class="hidden space-y-6">
+                <!-- Long feedback view -->
+                <div class="glass-card rounded-2xl border border-border-dark overflow-hidden">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="border-b border-border-dark bg-white/5">
+                                <th
+                                    class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-text-secondary text-center">
+                                    Patient</th>
+                                <th
+                                    class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-text-secondary text-center">
+                                    Type</th>
+                                <th
+                                    class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-text-secondary text-center">
+                                    Message</th>
+                                <th
+                                    class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-text-secondary text-center">
+                                    Status</th>
+                                <th
+                                    class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-text-secondary text-center">
+                                    Date</th>
+                                <th class="px-6 py-4 text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="feedback-table-body" class="divide-y divide-border-dark">
+                            <!-- Injected -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- MODULE: BROADCAST -->
+            <div id="module-broadcast" class="hidden max-w-4xl mx-auto">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Form -->
+                    <div class="glass-card p-8 rounded-2xl space-y-6">
+                        <h4 class="text-lg font-bold">New Notification</h4>
+                        <div class="space-y-4">
+                            <div>
+                                <label
+                                    class="block text-[10px] font-bold text-text-secondary uppercase tracking-widest mb-2">Target
+                                    Audience</label>
+                                <select id="broadcast-target"
+                                    class="w-full bg-background-dark border border-border-dark rounded-xl px-4 py-3 outline-none focus:border-primary transition-all text-sm">
+                                    <option value="all">All Patients</option>
+                                    <!-- Dynamic patients could go here but "all" is primary for broadcast -->
+                                </select>
+                            </div>
+                            <div>
+                                <label
+                                    class="block text-[10px] font-bold text-text-secondary uppercase tracking-widest mb-2">Category</label>
+                                <div class="flex gap-2">
+                                    <button onclick="setCategory(this, 'system')"
+                                        class="flex-1 py-2 rounded-lg border border-border-dark text-[10px] font-black uppercase bg-accent-blue/10 text-accent-blue cat-btn active shadow-sm">System</button>
+                                    <button onclick="setCategory(this, 'admin')"
+                                        class="flex-1 py-2 rounded-lg border border-border-dark text-[10px] font-black uppercase text-text-secondary cat-btn">Admin</button>
+                                    <button onclick="setCategory(this, 'alert')"
+                                        class="flex-1 py-2 rounded-lg border border-border-dark text-[10px] font-black uppercase text-text-secondary cat-btn">Alert</button>
+                                </div>
+                            </div>
+                            <div>
+                                <label
+                                    class="block text-[10px] font-bold text-text-secondary uppercase tracking-widest mb-2">Headline</label>
+                                <input id="broadcast-title" type="text" placeholder="e.g. System Maintenance"
+                                    class="w-full bg-background-dark border border-border-dark rounded-xl px-4 py-3 outline-none focus:border-primary transition-all text-sm">
+                            </div>
+                            <div>
+                                <label
+                                    class="block text-[10px] font-bold text-text-secondary uppercase tracking-widest mb-2">Message
+                                    Body</label>
+                                <textarea id="broadcast-message" rows="4" placeholder="Detailed content for patients..."
+                                    class="w-full bg-background-dark border border-border-dark rounded-xl px-4 py-3 outline-none focus:border-primary transition-all text-sm resize-none"></textarea>
+                            </div>
+                            <button id="btn-send-broadcast"
+                                class="w-full btn-primary py-4 rounded-xl font-black uppercase tracking-widest text-sm text-white transition-all flex items-center justify-center gap-2">
+                                <span class="material-symbols-outlined">send</span> Send Notification
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Preview -->
+                    <div class="flex flex-col">
+                        <h4 class="text-[10px] font-bold text-text-secondary uppercase tracking-[0.2em] mb-4">Patient
+                            Device Preview</h4>
+                        <div
+                            class="flex-1 bg-background-dark p-8 rounded-[40px] border-[12px] border-slate-800 shadow-2xl relative">
+                            <div class="absolute top-4 left-1/2 -translate-x-1/2 w-20 h-5 bg-slate-800 rounded-full">
+                            </div>
+                            <div class="mt-12 p-4 glass-card rounded-2xl border-l-4 border-l-primary" id="preview-box">
+                                <h5 id="preview-title" class="text-xs font-black">Notification Title</h5>
+                                <p id="preview-message" class="text-[10px] text-text-secondary mt-1">Message content
+                                    will appear here as the patient sees it.</p>
+                            </div>
+                            <div class="mt-4 p-4 rounded-2xl bg-white/5 opacity-30"></div>
+                            <div class="mt-4 p-4 rounded-2xl bg-white/5 opacity-30"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODULE: SYSTEM -->
+            <div id="module-system" class="hidden space-y-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="glass-card p-6 rounded-2xl">
+                        <h4 class="text-sm font-bold uppercase tracking-widest text-text-secondary mb-6">API Latency
+                            (ms)</h4>
+                        <div class="h-64 w-full" id="latency-container">
+                            <canvas id="latency-chart"></canvas>
+                        </div>
+                    </div>
+                    <div class="glass-card p-6 rounded-2xl">
+                        <h4 class="text-sm font-bold uppercase tracking-widest text-text-secondary mb-6">DB Connection
+                            Stability</h4>
+                        <div class="h-64 w-full" id="db-stability-container">
+                            <canvas id="db-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PATIENT DETAIL VIEW (Dynamic Overlay) -->
+            <div id="patient-detail-overlay"
+                class="hidden fixed inset-0 bg-background-dark/95 z-[100] p-8 overflow-y-auto no-scrollbar">
+                <button onclick="closePatientDetail()"
+                    class="sticky top-0 float-right size-12 rounded-xl bg-white/5 flex items-center justify-center text-text-secondary hover:text-text-primary transition-all">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+                <div id="patient-detail-content" class="max-w-5xl mx-auto py-10 space-y-12">
+                    <!-- Injected -->
+                </div>
+            </div>
+
         </div>
-    </div>
+    </main>
 
     <script type="module" src="js/admin.js"></script>
 </body>

@@ -337,6 +337,52 @@ async def get_history(
     
     return records
 
+@router.get("/daily_metrics/{patient_id}")
+async def get_monthly_metrics(
+    patient_id: str,
+    month: str, # Format: YYYY-MM
+    current_user: dict = Depends(get_current_user)
+):
+    db = get_db()
+    
+    # Simple regex to match the date prefix for the month
+    # Note: Using regex on the 'date' field which is a string "YYYY-MM-DD"
+    query = {
+        "patient_id": ObjectId(patient_id),
+        "date": {"$regex": f"^{month}"}
+    }
+    
+    records = await db["daily_metrics"].find(query).to_list(100)
+    
+    for r in records:
+        r["id"] = str(r["_id"])
+        r.pop("_id")
+        r.pop("patient_id", None)
+        
+    return records
+
+@router.get("/daily_metrics/{patient_id}/latest")
+async def get_latest_metrics(
+    patient_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    db = get_db()
+    
+    # Get the single most recent record for this patient
+    record = await db["daily_metrics"].find_one(
+        {"patient_id": ObjectId(patient_id)},
+        sort=[("created_at", -1)]
+    )
+    
+    if not record:
+        return {}
+        
+    record["id"] = str(record["_id"])
+    record.pop("_id")
+    record.pop("patient_id", None)
+    
+    return record
+
 @router.get("/weekly-report/{id}")
 async def get_report_metadata(id: str, current_user: dict = Depends(check_role("patient"))):
     db = get_db()
@@ -375,3 +421,67 @@ async def download_report(id: str, current_user: dict = Depends(check_role("pati
     
     from fastapi.responses import FileResponse
     return FileResponse(report["pdf_path"], media_type='application/pdf', filename=f"report_{id}.pdf")
+
+@router.get("/feedback/stats")
+async def get_feedback_stats(current_user: dict = Depends(get_current_user)):
+    db = get_db()
+    
+    # Get counts for different issue types
+    pipeline = [
+        {"$group": {"_id": "$issue_type", "count": {"$sum": 1}}}
+    ]
+    cursor = db["patient_feedback"].aggregate(pipeline)
+    stats = await cursor.to_list(10)
+    
+    # Format for frontend
+    result = {
+        "Bug": 0,
+        "Feature": 0,
+        "General": 0
+    }
+    
+    for s in stats:
+        label = s["_id"]
+        if "bug" in label.lower(): result["Bug"] += s["count"]
+        elif "feature" in label.lower(): result["Feature"] += s["count"]
+        else: result["General"] += s["count"]
+        
+    return result
+
+@router.get("/notifications")
+async def get_notifications(current_user: dict = Depends(check_role("patient"))):
+    db = get_db()
+    user_id = current_user["_id"]
+    
+    # Resolve patient_id
+    profile = await db["patient_profiles"].find_one({"user_id": user_id})
+    if not profile:
+        return []
+    
+    notifications = await db["notifications"].find(
+        {"patient_id": profile["_id"]}
+    ).sort("created_at", -1).limit(50).to_list(50)
+    
+    for n in notifications:
+        n["id"] = str(n["_id"])
+        n.pop("_id")
+        n.pop("patient_id")
+        
+    return notifications
+
+@router.patch("/notifications/{notification_id}/read")
+async def mark_notification_read(
+    notification_id: str,
+    current_user: dict = Depends(check_role("patient"))
+):
+    db = get_db()
+    try:
+        oid = ObjectId(notification_id)
+    except:
+        raise HTTPException(status_code=400, detail="Invalid ID")
+        
+    await db["notifications"].update_one(
+        {"_id": oid},
+        {"$set": {"is_read": True}}
+    )
+    return {"message": "Notification marked as read"}

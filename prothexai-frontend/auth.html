@@ -4,41 +4,344 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - ProthexaI</title>
-    <link rel="stylesheet" href="css/base.css">
-    <link rel="stylesheet" href="css/auth.css">
+    <title>ProthexaI - Clinical Intelligence Authentication</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2563EB;
+            --success: #16A34A;
+            --warning: #F59E0B;
+            --danger: #DC2626;
+            --background: #0F172A;
+            --card: rgba(30, 41, 59, 0.6);
+            --border: #334155;
+            --text-primary: #F1F5F9;
+            --text-secondary: #94A3B8;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background);
+            color: var(--text-primary);
+            overflow-x: hidden;
+        }
+
+        .heading-font {
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .hero-section {
+            height: 40vh;
+            background: radial-gradient(circle at 30% 40%, #1E3A8A, #0F172A);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .glass-card {
+            background: var(--card);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .input-field {
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+        }
+
+        .input-field:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+            outline: none;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 0 15px rgba(37, 99, 235, 0.4);
+            transform: translateY(-1px);
+        }
+
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+
+        /* Neural SVG Animation */
+        .neural-node {
+            fill: var(--primary);
+            filter: drop-shadow(0 0 5px var(--primary));
+        }
+
+        .neural-line {
+            stroke: var(--primary);
+            stroke-width: 1;
+            opacity: 0.2;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 0.3;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 0.8;
+                transform: scale(1.2);
+            }
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        .pulse-animation {
+            animation: pulse 4s infinite ease-in-out;
+        }
+
+        .float-animation {
+            animation: float 6s infinite ease-in-out;
+        }
+
+        /* Form transitions */
+        .form-content {
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        .hidden-form {
+            display: none;
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        /* Strength Meter */
+        .strength-meter {
+            height: 4px;
+            border-radius: 2px;
+            background: #1e293b;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+
+        .strength-bar {
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s ease, background-color 0.3s ease;
+        }
+
+        /* Shake animation */
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-5px);
+            }
+
+            75% {
+                transform: translateX(5px);
+            }
+        }
+
+        .shake {
+            animation: shake 0.2s cubic-bezier(.36, .07, .19, .97) both;
+            transform: translate3d(0, 0, 0);
+        }
+
+        /* Spinner */
+        .spinner {
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 2px solid white;
+            width: 16px;
+            height: 16px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
 </head>
 
 <body>
-    <div class="auth-container">
-        <div class="auth-card">
-            <div class="auth-header">
-                <span class="auth-logo">ProthexaI</span>
-                <p class="text-muted">Sign in to your account</p>
+    <!-- Top Hero Section -->
+    <section class="hero-section">
+        <!-- Neural SVG Background -->
+        <svg class="absolute inset-0 w-full h-full pointer-events-none opacity-40" viewBox="0 0 800 400"
+            preserveAspectRatio="xMidYMid slice">
+            <g class="float-animation">
+                <!-- Randomized medical intelligence network -->
+                <line class="neural-line" x1="100" y1="100" x2="300" y2="150" />
+                <line class="neural-line" x1="300" y1="150" x2="500" y2="100" />
+                <line class="neural-line" x1="300" y1="150" x2="400" y2="300" />
+                <line class="neural-line" x1="100" y1="100" x2="200" y2="250" />
+                <line class="neural-line" x1="500" y1="100" x2="700" y2="200" />
+                <line class="neural-line" x1="400" y1="300" x2="600" y2="250" />
+                <line class="neural-line" x1="200" y1="250" x2="400" y2="300" />
+                <line class="neural-line" x1="500" y1="100" x2="600" y2="250" />
+                <line class="neural-line" x1="700" y1="200" x2="600" y2="250" />
+                <line class="neural-line" x1="100" y1="100" x2="50" y2="200" />
+                <line class="neural-line" x1="50" y1="200" x2="200" y2="250" />
+
+                <circle class="neural-node pulse-animation" cx="100" cy="100" r="4" style="animation-delay: 0s" />
+                <circle class="neural-node pulse-animation" cx="300" cy="150" r="6" style="animation-delay: 1s" />
+                <circle class="neural-node pulse-animation" cx="500" cy="100" r="4" style="animation-delay: 2.5s" />
+                <circle class="neural-node pulse-animation" cx="200" cy="250" r="3" style="animation-delay: 0.5s" />
+                <circle class="neural-node pulse-animation" cx="400" cy="300" r="5" style="animation-delay: 1.5s" />
+                <circle class="neural-node pulse-animation" cx="700" cy="200" r="4" style="animation-delay: 3s" />
+                <circle class="neural-node pulse-animation" cx="600" cy="250" r="3" style="animation-delay: 2s" />
+                <circle class="neural-node pulse-animation" cx="50" cy="200" r="2" style="animation-delay: 1.2s" />
+            </g>
+        </svg>
+
+        <div class="relative z-10 text-center">
+            <h1 class="heading-font text-5xl md:text-6xl font-bold tracking-tight text-white mb-2">ProthexaI</h1>
+            <p class="text-blue-400 font-semibold tracking-[0.2em] text-sm uppercase">Clinical Intelligence System</p>
+        </div>
+    </section>
+
+    <!-- Authentication Card Container -->
+    <main class="relative -mt-20 px-4 pb-20 flex justify-center items-start">
+        <div class="glass-card w-full max-w-md p-8">
+            <!-- Toggle Tabs -->
+            <div class="flex bg-slate-900/50 p-1 rounded-xl mb-8">
+                <button id="tab-login"
+                    class="flex-1 py-2 rounded-lg font-medium transition-all duration-300 bg-blue-600 text-white shadow-lg">Sign
+                    In</button>
+                <button id="tab-register"
+                    class="flex-1 py-2 rounded-lg font-medium transition-all duration-300 text-slate-400 hover:text-white">Create
+                    Account</button>
             </div>
 
-            <form id="login-form">
-                <div class="form-group">
-                    <label class="form-label" for="email">Email Address</label>
-                    <input type="email" id="email" class="form-input" required placeholder="name@example.com">
+            <!-- Login Form -->
+            <form id="login-form" class="form-content space-y-6">
+                <div>
+                    <label class="block text-sm font-medium text-slate-400 mb-2">EMAIL ADDRESS</label>
+                    <input type="email" id="login-email"
+                        class="input-field w-full px-4 py-3 rounded-xl text-white placeholder-slate-600"
+                        placeholder="clinical@prothexai.com" required>
+                    <p class="error-text hidden text-red-500 text-xs mt-1 italic"></p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-400 mb-2">PASSWORD</label>
+                    <div class="relative">
+                        <input type="password" id="login-password"
+                            class="input-field w-full px-4 py-3 rounded-xl text-white placeholder-slate-600 pr-12"
+                            placeholder="••••••••" required>
+                        <button type="button"
+                            class="password-toggle absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                        </button>
+                    </div>
                 </div>
 
-                <div class="form-group">
-                    <label class="form-label" for="password">Password</label>
-                    <input type="password" id="password" class="form-input" required placeholder="••••••••">
+                <div id="login-error"
+                    class="hidden text-red-500 text-sm text-center bg-red-500/10 py-2 rounded-lg border border-red-500/20">
                 </div>
 
-                <div id="error-message" class="text-red text-muted"
-                    style="font-size: 0.875rem; min-height: 1.5rem; text-align: center;"></div>
-
-                <button type="submit" class="btn-auth">Sign In</button>
+                <button type="submit"
+                    class="btn-primary w-full py-4 rounded-xl font-bold text-white shadow-lg shadow-blue-500/20">
+                    <span class="btn-text">Sign In</span>
+                </button>
+                <p class="text-center text-slate-500 text-xs">Authorized personnel only. Secure clinical gateway.</p>
             </form>
 
-            <div class="auth-footer">
-                <p>Don't have an account? <a href="#" id="toggle-auth" class="auth-link">Register</a></p>
-            </div>
+            <!-- Register Form (Hidden by default) -->
+            <form id="register-form" class="form-content hidden-form space-y-5">
+                <div>
+                    <label class="block text-sm font-medium text-slate-400 mb-2">FULL NAME</label>
+                    <input type="text" id="reg-name"
+                        class="input-field w-full px-4 py-3 rounded-xl text-white placeholder-slate-600"
+                        placeholder="Dr. Sarah Connor" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-400 mb-2">EMAIL ADDRESS</label>
+                    <input type="email" id="reg-email"
+                        class="input-field w-full px-4 py-3 rounded-xl text-white placeholder-slate-600"
+                        placeholder="clinical@prothexai.com" required>
+                    <p class="error-text hidden text-red-500 text-xs mt-1 italic"></p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-400 mb-2">PASSWORD</label>
+                    <div class="relative">
+                        <input type="password" id="reg-password"
+                            class="input-field w-full px-4 py-3 rounded-xl text-white placeholder-slate-600 pr-12"
+                            placeholder="••••••••" required>
+                        <button type="button"
+                            class="password-toggle absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="strength-meter">
+                        <div id="password-strength" class="strength-bar"></div>
+                    </div>
+                    <p id="strength-label"
+                        class="text-[10px] text-slate-500 mt-1 uppercase tracking-wider font-semibold">Security Level:
+                        None</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-400 mb-2">CONFIRM PASSWORD</label>
+                    <input type="password" id="reg-confirm-password"
+                        class="input-field w-full px-4 py-3 rounded-xl text-white placeholder-slate-600"
+                        placeholder="••••••••" required>
+                </div>
+
+                <div id="register-error"
+                    class="hidden text-red-500 text-sm text-center bg-red-500/10 py-2 rounded-lg border border-red-500/20">
+                </div>
+
+                <button type="submit"
+                    class="btn-primary w-full py-4 rounded-xl font-bold text-white shadow-lg shadow-blue-500/20">
+                    <span class="btn-text">Create Account</span>
+                </button>
+                <p class="text-center text-slate-500 text-xs">By registering, you agree to clinical data guidelines.</p>
+            </form>
         </div>
-    </div>
+    </main>
 
     <script type="module" src="js/auth.js"></script>
 </body>
