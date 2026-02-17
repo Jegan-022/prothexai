@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Clinical Analytics</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#ec5b13",
+                        "background-light": "#f8f6f6",
+                        "background-dark": "#0B1419",
+                        "card-dark": "#16222a",
+                        "border-dark": "#1E2F36",
+                        "accent-blue": "#0EA5E9",
+                        "accent-green": "#22c55e",
+                        "accent-red": "#ef4444"
+                    },
+                    fontFamily: {
+                        "display": ["Public Sans", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Public Sans', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Custom Scrollbar for charts if needed */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #1E2F36;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+
+<body
+    class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex flex-col pb-24">
+    <!-- Header -->
+    <header
+        class="sticky top-0 z-50 bg-background-dark border-b border-border-dark px-4 h-14 flex items-center justify-between">
+        <h1 class="text-base font-semibold tracking-tight">Clinical Analytics</h1>
+        <div class="flex items-center gap-2">
+            <span class="text-xs text-slate-500 font-medium">Last 30 Days</span>
+            <button id="btn-download-report"
+                class="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg transition-colors border border-primary/20">
+                <span class="material-symbols-outlined text-[16px]">download</span>
+                <span class="text-xs font-bold">Report</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 max-w-md mx-auto w-full px-4 py-6 space-y-6">
+
+        <!-- Segmented Tabs -->
+        <div class="p-1 bg-card-dark rounded-xl flex border border-border-dark">
+            <button id="tab-gait"
+                class="flex-1 py-1.5 text-xs font-bold rounded-lg bg-primary text-white shadow-sm transition-all tab-btn"
+                onclick="switchTab('gait')">
+                GAIT
+            </button>
+            <button id="tab-recovery"
+                class="flex-1 py-1.5 text-xs font-medium text-slate-500 hover:text-slate-300 transition-all tab-btn"
+                onclick="switchTab('recovery')">
+                RECOVERY
+            </button>
+            <button id="tab-pressure"
+                class="flex-1 py-1.5 text-xs font-medium text-slate-500 hover:text-slate-300 transition-all tab-btn"
+                onclick="switchTab('pressure')">
+                PRESSURE
+            </button>
+        </div>
+
+        <!-- GAIT TAB CONTENT -->
+        <div id="content-gait" class="space-y-6 tab-content">
+            <!-- Summary Row -->
+            <div class="grid grid-cols-2 gap-3">
+                <div class="bg-card-dark border border-border-dark rounded-xl p-3">
+                    <p class="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Avg Symmetry</p>
+                    <p id="avg-sym" class="text-xl font-bold mt-1">--%</p>
+                </div>
+                <div class="bg-card-dark border border-border-dark rounded-xl p-3">
+                    <p class="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Avg Speed</p>
+                    <p id="avg-speed" class="text-xl font-bold mt-1">-- <span
+                            class="text-xs font-normal text-slate-500">m/s</span></p>
+                </div>
+                <div class="bg-card-dark border border-border-dark rounded-xl p-3">
+                    <p class="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Stride Len</p>
+                    <p id="avg-stride" class="text-xl font-bold mt-1">-- <span
+                            class="text-xs font-normal text-slate-500">cm</span></p>
+                </div>
+                <div class="bg-card-dark border border-border-dark rounded-xl p-3">
+                    <p class="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Step Freq</p>
+                    <p id="avg-cadence" class="text-xl font-bold mt-1">-- <span
+                            class="text-xs font-normal text-slate-500">spm</span></p>
+                </div>
+            </div>
+
+            <!-- Chart 1: Dual Axis Line Chart (Gait Performance) -->
+            <div class="bg-card-dark border border-border-dark rounded-xl p-4">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Gait Performance</h3>
+                    <div class="flex gap-3 text-[10px] font-bold">
+                        <span class="flex items-center gap-1 text-accent-blue"><span
+                                class="w-2 h-2 rounded-full bg-accent-blue"></span> Symmetry</span>
+                        <span class="flex items-center gap-1 text-primary"><span
+                                class="w-2 h-2 rounded-full bg-primary"></span> Speed</span>
+                    </div>
+                </div>
+                <div class="relative h-48 w-full">
+                    <canvas id="chart-gait-dual"></canvas>
+                </div>
+            </div>
+
+            <!-- Chart 4: Wear Hours Bar Chart -->
+            <div class="bg-card-dark border border-border-dark rounded-xl p-4">
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Daily Wear Hours</h3>
+                <div class="relative h-40 w-full">
+                    <canvas id="chart-wear-hours"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- RECOVERY TAB CONTENT -->
+        <div id="content-recovery" class="space-y-6 tab-content hidden">
+            <!-- Chart 3: Health Score Trend -->
+            <div class="bg-card-dark border border-border-dark rounded-xl p-4">
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Health Score Trend</h3>
+                <div class="relative h-48 w-full">
+                    <canvas id="chart-health-trend"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- PRESSURE TAB CONTENT -->
+        <div id="content-pressure" class="space-y-6 tab-content hidden">
+            <!-- Chart 2: Pressure & Skin Chart -->
+            <div class="bg-card-dark border border-border-dark rounded-xl p-4">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Pressure & Skin Health</h3>
+                    <div class="flex gap-3 text-[10px] font-bold">
+                        <span class="flex items-center gap-1 text-accent-red"><span
+                                class="w-2 h-2 rounded-full bg-accent-red"></span> Pressure</span>
+                        <span class="flex items-center gap-1 text-accent-green"><span
+                                class="w-2 h-2 rounded-full bg-accent-green"></span> Temp</span>
+                    </div>
+                </div>
+                <div class="relative h-48 w-full">
+                    <canvas id="chart-pressure-skin"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Clinical Insight Card (Global Bottom) -->
+        <div class="bg-card-dark border border-border-dark rounded-xl p-4 flex gap-4 items-start">
+            <div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                <span class="material-symbols-outlined text-primary text-[18px]">auto_awesome</span>
+            </div>
+            <div>
+                <div class="flex justify-between items-baseline mb-1">
+                    <h4 class="text-sm font-bold text-slate-200">Clinical Correlation</h4>
+                    <span class="text-[10px] font-bold text-accent-green">r = 0.82</span>
+                </div>
+                <p id="ai-insight-text" class="text-xs text-slate-400 leading-relaxed">
+                    Strong positive correlation computed between symmetry and gait speed. Current deviation is within
+                    acceptable clinical limits.
+                </p>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Persistent Bottom Nav -->
+    <nav
+        class="fixed bottom-0 left-0 right-0 bg-card-dark border-t border-border-dark h-16 flex items-center justify-around z-50">
+        <a href="dashboard.html" class="flex flex-col items-center text-slate-500 hover:text-primary transition">
+            <span class="material-symbols-outlined text-[22px]">dashboard</span>
+            <span class="text-[11px] mt-1">Dashboard</span>
+        </a>
+        <a href="analytics.html" class="flex flex-col items-center text-primary">
+            <span class="material-symbols-outlined text-[22px]"
+                style="font-variation-settings: 'FILL' 1">monitoring</span>
+            <span class="text-[11px] font-semibold mt-1">Analytics</span>
+        </a>
+        <a href="profile.html" class="flex flex-col items-center text-slate-500 hover:text-primary transition">
+            <span class="material-symbols-outlined text-[22px]">person</span>
+            <span class="text-[11px] mt-1">Profile</span>
+        </a>
+        <a href="settings.html" class="flex flex-col items-center text-slate-500 hover:text-primary transition">
+            <span class="material-symbols-outlined text-[22px]">settings</span>
+            <span class="text-[11px] mt-1">Settings</span>
+        </a>
+    </nav>
+
+    <!-- Chart Logic -->
+    <!-- Chart Logic -->
+    <script type="module" src="./js/analytics.js"></script>
+</body>
+
+</html>

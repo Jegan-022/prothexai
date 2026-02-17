@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProthexaI - Next-Gen Prosthetic Intelligence</title>
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/landing.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+</head>
+<body>
+    <div class="hero-section">
+        <div class="hero-content">
+            <h1 class="hero-title">Next-Gen Prosthetic Intelligence</h1>
+            <p class="hero-subtitle">Real-time biomechanical analysis, AI-driven insights, and skin health monitoring for the modern prosthetic user.</p>
+            <a href="auth.html" class="cta-button">Start Analysis</a>
+        </div>
+        <div class="hero-canvas-container" id="hero-canvas">
+            <!-- Three.js Canvas Injected Here -->
+        </div>
+    </div>
+
+    <div class="features-grid">
+        <div class="feature-card">
+            <div class="feature-icon">🏃‍♂️</div>
+            <h3>Gait Analysis</h3>
+            <p class="text-muted">Precision tracking of symmetry, cadence, and walking speed to optimize your movement.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🛡️</div>
+            <h3>Skin Health</h3>
+            <p class="text-muted">Proactive monitoring of moisture, temperature, and pressure to prevent irritation.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🧠</div>
+            <h3>AI Insights</h3>
+            <p class="text-muted">Personalized daily summaries and clinical recommendations driven by advanced AI.</p>
+        </div>
+    </div>
+
+    <!-- Logic -->
+    <script type="module" src="js/api.js"></script>
+    <script src="js/three-hero.js"></script>
+</body>
+</html>

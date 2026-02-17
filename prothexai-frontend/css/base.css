@@ -1,0 +1,74 @@
+:root {
+  --primary: #0DA2E7;
+  --bg-dark: #101C22;
+  --card: #182B34;
+  --border: #223D49;
+  --green: #10B981;
+  --red: #EF4444;
+  --text-main: #FFFFFF;
+  --text-muted: #94A3B8;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: var(--bg-dark);
+  color: var(--text-main);
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+/* Scrollbar Customization */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-dark); 
+}
+ 
+::-webkit-scrollbar-thumb {
+  background: var(--border); 
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary); 
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+button {
+  border: none;
+  cursor: pointer;
+  background: none;
+  font-family: inherit;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+/* Utility Tokens */
+.text-primary { color: var(--primary); }
+.text-green { color: var(--green); }
+.text-red { color: var(--red); }
+.text-muted { color: var(--text-muted); }
+
+.bg-card { background-color: var(--card); }
+.border-std { border: 1px solid var(--border); }

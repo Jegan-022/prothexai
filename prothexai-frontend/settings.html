@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Clinical Settings</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#ec5b13",
+                        "background-light": "#f8f6f6",
+                        "background-dark": "#0d151a",
+                        "clinical-surface": "#1c1411",
+                        "clinical-border": "#2d231f",
+                        "clinical-red": "#ef4444"
+                    },
+                    fontFamily: {
+                        "display": ["Public Sans", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "12px",
+                        "xl": "16px",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Public Sans', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+    </style>
+</head>
+
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex flex-col">
+    <!-- Header Section -->
+    <header
+        class="sticky top-0 z-50 bg-background-dark border-b border-clinical-border h-14 flex items-center justify-between px-4">
+        <a href="dashboard.html"
+            class="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-clinical-surface transition">
+            <span class="material-symbols-outlined text-slate-400 text-[20px]">
+                arrow_back
+            </span>
+        </a>
+
+        <h1 class="text-base font-semibold tracking-tight">
+            Settings
+        </h1>
+
+        <div class="w-9 h-9"></div>
+    </header>
+
+    <!-- Main Content Scroll Area -->
+    <main class="flex-1 px-4 py-6 pb-32">
+        <!-- Sectioned List Group -->
+        <h2 class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3 px-1">General</h2>
+
+        <div class="space-y-3">
+            <!-- About Item -->
+            <a href="#"
+                class="flex items-center justify-between px-4 h-14 rounded-xl bg-clinical-surface border border-clinical-border hover:bg-[#241b18] transition">
+                <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined text-slate-400 text-[20px]">
+                        info
+                    </span>
+                    <span class="text-sm font-medium">
+                        About
+                    </span>
+                </div>
+                <span class="material-symbols-outlined text-slate-500 text-[18px]">
+                    chevron_right
+                </span>
+            </a>
+
+            <!-- Feedback Item -->
+            <a href="#"
+                class="flex items-center justify-between px-4 h-14 rounded-xl bg-clinical-surface border border-clinical-border hover:bg-[#241b18] transition">
+                <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined text-slate-400 text-[20px]">
+                        chat_bubble
+                    </span>
+                    <span class="text-sm font-medium">
+                        Feedback
+                    </span>
+                </div>
+                <span class="material-symbols-outlined text-slate-500 text-[18px]">
+                    chevron_right
+                </span>
+            </a>
+
+            <!-- Notifications Item -->
+            <a href="#"
+                class="flex items-center justify-between px-4 h-14 rounded-xl bg-clinical-surface border border-clinical-border hover:bg-[#241b18] transition">
+                <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined text-slate-400 text-[20px]">
+                        notifications
+                    </span>
+                    <span class="text-sm font-medium">
+                        Notifications
+                    </span>
+                </div>
+                <span class="material-symbols-outlined text-slate-500 text-[18px]">
+                    chevron_right
+                </span>
+            </a>
+
+            <!-- Privacy Item -->
+            <a href="#"
+                class="flex items-center justify-between px-4 h-14 rounded-xl bg-clinical-surface border border-clinical-border hover:bg-[#241b18] transition">
+                <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined text-slate-400 text-[20px]">
+                        shield
+                    </span>
+                    <span class="text-sm font-medium">
+                        Privacy
+                    </span>
+                </div>
+                <span class="material-symbols-outlined text-slate-500 text-[18px]">
+                    chevron_right
+                </span>
+            </a>
+        </div>
+
+        <!-- Logout Section -->
+        <div class="mt-10">
+            <button id="btn-logout"
+                class="w-full h-12 rounded-xl border border-red-500/20 bg-red-500/5 text-red-500 font-medium flex items-center justify-center gap-2 hover:bg-red-500/10 transition">
+                <span class="material-symbols-outlined text-[18px]">
+                    logout
+                </span>
+                Logout
+            </button>
+
+            <p class="text-center text-xs text-slate-500 mt-6">
+                Clinical App v2.4.12 • Built for HIPAA Compliance
+            </p>
+        </div>
+    </main>
+
+    <!-- Persistent Bottom Nav -->
+    <nav
+        class="fixed bottom-0 left-0 right-0 bg-clinical-surface border-t border-clinical-border h-16 flex items-center justify-around z-50">
+
+        <a href="dashboard.html" class="flex flex-col items-center text-slate-500 hover:text-primary transition">
+            <span class="material-symbols-outlined text-[22px]">
+                dashboard
+            </span>
+            <span class="text-[11px] mt-1">
+                Dashboard
+            </span>
+        </a>
+
+        <a href="analytics.html" class="flex flex-col items-center text-slate-500 hover:text-primary transition">
+            <span class="material-symbols-outlined text-[22px]">
+                monitoring
+            </span>
+            <span class="text-[11px] mt-1">
+                Analytics
+            </span>
+        </a>
+
+        <a href="profile.html" class="flex flex-col items-center text-slate-500 hover:text-primary transition">
+            <span class="material-symbols-outlined text-[22px]">
+                person
+            </span>
+            <span class="text-[11px] mt-1">
+                Profile
+            </span>
+        </a>
+
+        <a href="settings.html" class="flex flex-col items-center text-primary">
+            <span class="material-symbols-outlined text-[22px]" style="font-variation-settings: 'FILL' 1">
+                settings
+            </span>
+            <span class="text-[11px] font-semibold mt-1">
+                Settings
+            </span>
+        </a>
+
+    </nav>
+
+    <script>
+        document.getElementById('btn-logout').onclick = () => {
+            if (confirm("Are you sure you want to logout?")) {
+                localStorage.clear();
+                window.location.href = "index.html";
+            }
+        };
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,64 @@
+/* history.css */
+
+.history-container {
+    padding: 2rem;
+}
+
+.header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.history-table-wrapper {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    overflow: hidden;
+}
+
+.history-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.history-table th,
+.history-table td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+}
+
+.history-table th {
+    background: rgba(0, 0, 0, 0.2);
+    font-weight: 600;
+    color: var(--text-muted);
+    font-size: 0.875rem;
+}
+
+.history-table tr:hover {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.history-table tr:last-child td {
+    border-bottom: none;
+}
+
+.btn-text {
+    color: var(--primary);
+    font-weight: 500;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-text:hover {
+    text-decoration: underline;
+}
+
+.empty-state {
+    padding: 4rem;
+    text-align: center;
+    color: var(--text-muted);
+}

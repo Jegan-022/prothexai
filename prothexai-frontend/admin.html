@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - ProthexaI</title>
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/admin.css">
+    <script src="js/guard.js"></script>
+</head>
+
+<body>
+    <div class="container admin-container">
+        <header style="margin-bottom: 2rem; display: flex; justify-content: space-between;">
+            <h1>Admin Overview</h1>
+            <button id="btn-logout" class="text-red">Logout</button>
+        </header>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <p class="stat-label">Total Patients</p>
+                <div id="stat-patients" class="stat-value">--</div>
+            </div>
+            <div class="stat-card">
+                <p class="stat-label">Total Feedback</p>
+                <div id="stat-feedback" class="stat-value">--</div>
+            </div>
+            <div class="stat-card">
+                <p class="stat-label">Open Issues</p>
+                <div id="stat-open" class="stat-value text-red">--</div>
+            </div>
+            <div class="stat-card">
+                <p class="stat-label">Resolved</p>
+                <div id="stat-resolved" class="stat-value text-green">--</div>
+            </div>
+        </div>
+
+        <div class="feedback-section">
+            <h3 style="margin-bottom: 1.5rem;">Recent User Feedback</h3>
+            <div id="feedback-list" class="feedback-grid">
+                <!-- JS Populates Items -->
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="js/admin.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,112 @@
+/* landing.css */
+
+.hero-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    min-height: 100vh;
+    padding: 0 4rem;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-content {
+    z-index: 10;
+    max-width: 600px;
+}
+
+.hero-title {
+    font-size: 3.5rem;
+    font-weight: 800;
+    line-height: 1.1;
+    background: linear-gradient(to right, #fff, #94A3B8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 1.5rem;
+    opacity: 0;
+    /* JS Fade in */
+    transform: translateY(20px);
+    animation: slideUp 0.8s forwards 0.2s;
+}
+
+.hero-subtitle {
+    font-size: 1.25rem;
+    color: var(--text-muted);
+    margin-bottom: 2.5rem;
+    opacity: 0;
+    transform: translateY(20px);
+    animation: slideUp 0.8s forwards 0.4s;
+}
+
+.cta-button {
+    display: inline-block;
+    padding: 1rem 2rem;
+    background: var(--primary);
+    color: white;
+    font-weight: 600;
+    border-radius: 9999px;
+    font-size: 1.125rem;
+    transition: transform 0.2s, box-shadow 0.2s;
+    opacity: 0;
+    transform: translateY(20px);
+    animation: slideUp 0.8s forwards 0.6s;
+}
+
+.cta-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px -10px var(--primary);
+}
+
+.hero-canvas-container {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    right: 0;
+    z-index: 1;
+    /* Behind content on mobile, specific grid on desktop */
+}
+
+@media (min-width: 1024px) {
+    .hero-canvas-container {
+        position: relative;
+        height: 600px;
+        z-index: 5;
+    }
+}
+
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    padding: 4rem 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.feature-card {
+    background: rgba(24, 43, 52, 0.6);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border);
+    padding: 2rem;
+    border-radius: 1rem;
+    transition: transform 0.3s;
+}
+
+.feature-card:hover {
+    transform: translateY(-5px);
+    border-color: var(--primary);
+}
+
+.feature-icon {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    color: var(--primary);
+}
+
+@keyframes slideUp {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

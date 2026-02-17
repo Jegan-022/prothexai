@@ -1,0 +1,15 @@
+fastapi
+uvicorn[standard]
+motor
+pydantic[email]
+pydantic-settings
+python-dotenv
+passlib[bcrypt,argon2]
+python-jose[cryptography]
+reportlab
+apscheduler
+pandas
+scikit-learn
+python-multipart
+argon2-cffi
+google-generativeai

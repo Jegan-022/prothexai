@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>ProthexaI - Dashboard</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="js/guard.js"></script>
+
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#ec5b13",
+                        "background-light": "#f8f6f6",
+                        "background-dark": "#0B1419",
+                        "card-dark": "#12232B",
+                        "accent-blue": "#0EA5E9",
+                        "accent-green": "#10B981",
+                        "accent-red": "#EF4444"
+                    },
+                    fontFamily: {
+                        "display": ["Public Sans", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Public Sans', sans-serif;
+            min-height: max(884px, 100dvh);
+        }
+
+        .semi-circle-gauge {
+            position: relative;
+            width: 140px;
+            height: 70px;
+            overflow: hidden;
+        }
+
+        .gauge-body {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            border: 12px solid #1e2f38;
+            border-bottom-color: #ec5b13;
+            border-right-color: #ec5b13;
+            transform: rotate(45deg);
+            transition: transform 1s ease-out;
+        }
+
+        .nav-glow {
+            box-shadow: 0 -4px 12px rgba(236, 91, 19, 0.15);
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            display: none;
+            /* Hidden by default */
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 50;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-active {
+            display: flex;
+        }
+    </style>
+</head>
+
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen pb-24">
+    <!-- Header -->
+    <header
+        class="flex items-center justify-between p-6 bg-white dark:bg-background-dark border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10">
+        <div class="flex items-center gap-3">
+            <div class="size-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                <span class="material-symbols-outlined font-bold">clinical_notes</span>
+            </div>
+            <div>
+                <h1 id="user-greeting" class="text-lg font-bold leading-tight tracking-tight">Welcome</h1>
+                <p id="last-updated" class="text-xs text-slate-500 dark:text-slate-400">Loading...</p>
+            </div>
+        </div>
+        <button id="btn-manual"
+            class="relative p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-card-dark transition-colors border border-slate-200 dark:border-slate-700">
+            <span class="material-symbols-outlined text-primary">add_circle</span>
+        </button>
+    </header>
+
+    <main class="p-4 space-y-4 max-w-2xl mx-auto">
+        <!-- Health Overview Card -->
+        <section
+            class="bg-white dark:bg-card-dark rounded-xl p-5 shadow-sm border border-slate-200 dark:border-slate-800">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Health
+                    Overview</h2>
+                <span id="status-badge"
+                    class="px-2 py-1 rounded bg-green-500/10 text-green-500 text-[10px] font-bold uppercase tracking-tighter">Status:
+                    Optimal</span>
+            </div>
+            <div class="flex flex-col sm:flex-row items-center gap-6">
+                <!-- Gauge Left -->
+                <div class="relative flex flex-col items-center">
+                    <div class="semi-circle-gauge">
+                        <div id="health-gauge-arc" class="gauge-body"></div>
+                        <div class="absolute inset-0 flex items-end justify-center pb-1">
+                            <span id="health-score-val" class="text-3xl font-bold text-primary">--</span>
+                        </div>
+                    </div>
+                    <span class="text-[10px] font-medium text-slate-400 mt-1">HEALTH SCORE</span>
+                    <button id="btn-download-report"
+                        class="mt-3 px-3 py-1 text-[10px] font-bold text-primary border border-primary/30 rounded-full hover:bg-primary/10 transition-colors flex items-center gap-1">
+                        <span class="material-symbols-outlined text-[14px]">download</span>
+                        Report
+                    </button>
+                </div>
+                <!-- Stats Right -->
+                <div class="flex-1 w-full grid grid-cols-2 gap-4">
+                    <div class="space-y-1">
+                        <p class="text-[10px] text-slate-400 font-medium">SYMMETRY</p>
+                        <p id="stat-symmetry" class="text-lg font-bold">--%</p>
+                    </div>
+                    <div class="space-y-1">
+                        <p class="text-[10px] text-slate-400 font-medium">GAIT SPEED</p>
+                        <p class="text-lg font-bold"><span id="stat-speed">--</span> <span
+                                class="text-xs font-normal text-slate-500">m/s</span></p>
+                    </div>
+                    <div
+                        class="col-span-2 pt-2 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center">
+                        <p class="text-[10px] text-slate-400 font-medium">LATEST ALERTS</p>
+                        <div id="alerts-list" class="text-xs font-bold text-slate-300">No alerts</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Today's Status Block -->
+        <section id="today-status-card"
+            class="bg-slate-50 dark:bg-slate-800/30 rounded-xl p-4 border border-slate-200 dark:border-slate-700 flex items-center gap-4">
+            <div id="today-icon-bg"
+                class="size-12 rounded-lg bg-slate-200 flex items-center justify-center text-slate-500 shrink-0">
+                <span id="today-icon" class="material-symbols-outlined text-2xl">pending</span>
+            </div>
+            <div class="flex-1">
+                <div class="flex justify-between items-start">
+                    <h3 id="today-title" class="font-bold text-slate-900 dark:text-white">Today: Pending</h3>
+                    <span id="today-score" class="text-xl font-black text-slate-400">--</span>
+                </div>
+                <div class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                    <span class="material-symbols-outlined text-sm">schedule</span>
+                    <span id="today-msg">Submit your daily metrics</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Compliance Calendar Section -->
+        <section
+            class="bg-white dark:bg-card-dark rounded-xl p-5 shadow-sm border border-slate-200 dark:border-slate-800">
+            <div class="flex items-center justify-between mb-2">
+                <h3 class="text-sm font-bold">Monthly Compliance</h3>
+                <span id="compliance-pct" class="text-primary font-bold">--%</span>
+            </div>
+            <!-- Progress Bar -->
+            <div class="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full mb-6 overflow-hidden">
+                <div id="compliance-progress" class="h-full bg-primary rounded-full" style="width: 0%"></div>
+            </div>
+            <!-- 7-Column Grid -->
+            <div class="grid grid-cols-7 gap-2">
+                <!-- Weekday Labels -->
+                <div class="text-[10px] text-center font-bold text-slate-400">M</div>
+                <div class="text-[10px] text-center font-bold text-slate-400">T</div>
+                <div class="text-[10px] text-center font-bold text-slate-400">W</div>
+                <div class="text-[10px] text-center font-bold text-slate-400">T</div>
+                <div class="text-[10px] text-center font-bold text-slate-400">F</div>
+                <div class="text-[10px] text-center font-bold text-slate-400">S</div>
+                <div class="text-[10px] text-center font-bold text-slate-400">S</div>
+
+                <!-- JS Populates Tiles here -->
+                <div id="calendar-grid-container" class="contents"></div>
+            </div>
+            <p class="mt-4 text-[11px] text-slate-400 text-center">Blue border indicates current day tracking status.
+            </p>
+        </section>
+
+        <!-- Quick AI Insight -->
+        <section
+            class="bg-accent-blue/10 dark:bg-accent-blue/5 rounded-xl p-4 border border-accent-blue/20 flex items-center gap-3">
+            <span class="material-symbols-outlined text-accent-blue font-bold">auto_awesome</span>
+            <p id="ai-summary" class="text-sm font-medium text-slate-700 dark:text-slate-300">
+                Loading AI insights...
+            </p>
+        </section>
+
+        <!-- Hidden Charts Containers to prevent JS errors -->
+        <div id="correlation-chart" style="display:none"></div>
+        <div id="recovery-chart" style="display:none"></div>
+        <div id="heatmap-chart" style="display:none"></div>
+        <div id="health-gauge" style="display:none"></div>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav
+        class="fixed bottom-0 left-0 right-0 bg-white dark:bg-background-dark border-t border-slate-200 dark:border-slate-800 px-6 pb-6 pt-3 flex justify-between items-center nav-glow z-20">
+        <a class="flex flex-col items-center gap-1 group" href="dashboard.html">
+            <div class="relative">
+                <span
+                    class="material-symbols-outlined text-primary group-hover:scale-110 transition-transform fill-[1]">dashboard</span>
+                <div class="absolute inset-0 bg-primary/20 blur-md rounded-full -z-10"></div>
+            </div>
+            <span class="text-[10px] font-bold text-primary uppercase tracking-widest">Dashboard</span>
+        </a>
+        <a class="flex flex-col items-center gap-1 group text-slate-400 dark:text-slate-500 hover:text-slate-600 transition-colors"
+            href="analytics.html">
+            <span class="material-symbols-outlined group-hover:scale-110 transition-transform">analytics</span>
+            <span class="text-[10px] font-bold uppercase tracking-widest">Analytics</span>
+        </a>
+        <a class="flex flex-col items-center gap-1 group text-slate-400 dark:text-slate-500 hover:text-slate-600 transition-colors"
+            href="profile.html">
+            <span class="material-symbols-outlined group-hover:scale-110 transition-transform">person</span>
+            <span class="text-[10px] font-bold uppercase tracking-widest">Profile</span>
+        </a>
+        <a class="flex flex-col items-center gap-1 group text-slate-400 dark:text-slate-500 hover:text-slate-600 transition-colors"
+            href="settings.html">
+            <span class="material-symbols-outlined group-hover:scale-110 transition-transform">settings</span>
+            <span class="text-[10px] font-bold uppercase tracking-widest">Settings</span>
+        </a>
+    </nav>
+
+    <!-- Manual Entry Modal (Tailwind) -->
+    <div id="manual-modal" class="modal-overlay">
+        <div
+            class="bg-white dark:bg-card-dark rounded-xl p-6 w-full max-w-md m-4 shadow-2xl border border-slate-200 dark:border-slate-700">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold">Log Daily Metrics</h3>
+                <button id="close-manual" class="text-slate-400 hover:text-white"><span
+                        class="material-symbols-outlined">close</span></button>
+            </div>
+            <form id="manual-form" class="space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1">Step Length (cm)</label>
+                        <input type="number" step="0.1" id="step_length"
+                            class="w-full bg-slate-100 dark:bg-background-dark border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:border-primary outline-none"
+                            required placeholder="65.0">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1">Cadence (spm)</label>
+                        <input type="number" step="0.1" id="cadence"
+                            class="w-full bg-slate-100 dark:bg-background-dark border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:border-primary outline-none"
+                            required placeholder="100.0">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1">Speed (m/s)</label>
+                        <input type="number" step="0.01" id="walking_speed"
+                            class="w-full bg-slate-100 dark:bg-background-dark border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:border-primary outline-none"
+                            required placeholder="1.2">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1">Symmetry (0-1)</label>
+                        <input type="number" step="0.01" max="1" id="gait_symmetry"
+                            class="w-full bg-slate-100 dark:bg-background-dark border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:border-primary outline-none"
+                            required placeholder="0.95">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1">Temp (°C)</label>
+                        <input type="number" step="0.1" id="skin_temp"
+                            class="w-full bg-slate-100 dark:bg-background-dark border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:border-primary outline-none"
+                            required placeholder="32.0">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1">Moisture (%)</label>
+                        <input type="number" step="1" id="skin_moisture"
+                            class="w-full bg-slate-100 dark:bg-background-dark border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:border-primary outline-none"
+                            required placeholder="60">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1">Pressure (0-1)</label>
+                        <input type="number" step="0.01" max="1" id="pressure_dist"
+                            class="w-full bg-slate-100 dark:bg-background-dark border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:border-primary outline-none"
+                            required placeholder="0.85">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1">Wear (hrs)</label>
+                        <input type="number" step="0.5" id="wear_hours"
+                            class="w-full bg-slate-100 dark:bg-background-dark border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:border-primary outline-none"
+                            required placeholder="8.0">
+                    </div>
+                </div>
+                <div id="manual-status" class="text-xs text-center min-h-[16px]"></div>
+                <button type="submit"
+                    class="w-full bg-primary hover:bg-orange-600 text-white font-bold py-3 rounded-xl transition-colors shadow-lg shadow-primary/20">Submit
+                    Data</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Upload Modal Stub (Hidden) -->
+    <div id="upload-modal" class="modal-overlay">
+        <div class="bg-white dark:bg-card-dark rounded-xl p-6 w-full max-w-sm">
+            <h3 class="font-bold mb-4">Upload CSV</h3>
+            <div id="drop-zone"
+                class="border-2 border-dashed border-slate-600 rounded-lg p-8 text-center cursor-pointer mb-4">
+                <p class="text-xs text-slate-400">Click to upload</p>
+                <input type="file" id="file-input" hidden>
+            </div>
+            <div id="upload-status" class="text-xs mb-4"></div>
+            <div class="flex gap-2">
+                <button id="close-modal" class="flex-1 bg-slate-700 rounded-lg py-2 text-sm">Cancel</button>
+                <button id="btn-upload" class="hidden">Trigger</button> <!-- Logic hook -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Visual Polish -->
+    <div class="fixed top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-[100px] -z-10 pointer-events-none"></div>
+    <div class="fixed bottom-24 left-0 w-48 h-48 bg-accent-blue/5 rounded-full blur-[80px] -z-10 pointer-events-none">
+    </div>
+
+    <script>
+        document.documentElement.classList.add('dark');
+        // Initial setup for modals since classes changed
+        const manualModal = document.getElementById('manual-modal');
+        const uploadModal = document.getElementById('upload-modal');
+
+        // Expose toggle logic for existing JS to hook into if needed, 
+        // OR we rely on existing JS event listeners finding these IDs.
+    </script>
+    <script type="module" src="js/dashboard.js"></script>
+</body>
+
+</html>
