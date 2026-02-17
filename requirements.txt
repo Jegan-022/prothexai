@@ -8,3 +8,5 @@ passlib[bcrypt]
 python-dotenv
 google-generativeai
 pydantic-settings
+pydantic[email]
+
